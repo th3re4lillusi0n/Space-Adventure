@@ -1,0 +1,885 @@
+<html><head><base href="https://example.com/" />
+<title>Space Adventure Game - Complete Menu System</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #000033;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+        color: white;
+    }
+    
+    #gameCanvas {
+        border: 2px solid #333;
+        background: linear-gradient(to bottom, #000033, #000066);
+        display: none;
+    }
+    
+    #gameOver, #levelComplete {
+        position: absolute;
+        color: white;
+        font-size: 48px;
+        display: none;
+        text-align: center;
+    }
+    
+    .menu {
+        text-align: center;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 51, 0.9);
+        padding: 40px;
+        border-radius: 15px;
+        border: 2px solid #4CAF50;
+    }
+    
+    .menu h1 {
+        color: #4CAF50;
+        margin-bottom: 30px;
+    }
+    
+    .game-btn {
+        padding: 15px 30px;
+        font-size: 20px;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 10px;
+        min-width: 220px; /* Increased from 200px */
+        transition: all 0.3s ease;
+    }
+    
+    .restart-btn {
+        background: #4CAF50;
+    }
+    
+    .restart-btn:hover {
+        background: #45a049;
+        transform: scale(1.05);
+    }
+    
+    .mode-btn {
+        background: #9c27b0;
+    }
+    
+    .mode-btn:hover {
+        background: #7b1fa2;
+        transform: scale(1.05);
+    }
+    
+    .back-btn {
+        background: #f44336;
+    }
+    
+    .back-btn:hover {
+        background: #d32f2f;
+        transform: scale(1.05);
+    }
+    
+    .donate-btn {
+        background: #ff9800;
+    }
+    
+    .donate-btn:hover {
+        background: #f57c00;
+        transform: scale(1.05);
+    }
+    
+    .credits-btn {
+        background: #FFD700;  /* Gold color */
+    }
+
+    .credits-btn:hover {
+        background: #DAA520;  /* Darker gold on hover */
+        transform: scale(1.05);
+    }
+
+    .level-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .level-btn {
+        background: #2196F3;
+    }
+    
+    .level-btn:hover {
+        background: #1976D2;
+        transform: scale(1.05);
+    }
+
+    #creditsMenu p {
+        color: #FFD700;
+    }
+</style>
+</head>
+<body>
+<div id="mainMenu" class="menu">
+    <h1>Space Adventure</h1>
+    <button class="game-btn restart-btn" onclick="showLevelSelect()">Normal Mode</button><br>
+    <button class="game-btn mode-btn" onclick="showArcadeMenu()">Arcade Mode</button><br>
+    <button class="game-btn credits-btn" onclick="showCredits()">Credits</button>
+</div>
+
+<div id="creditsMenu" class="menu" style="display: none;">
+    <h1>Credits</h1>
+    <p>Created by: th3re4l_illusi0n</p>
+    <button class="game-btn donate-btn" onclick="window.open('https://paypal.me', '_blank')">Donate</button><br>
+    <button class="game-btn back-btn" onclick="showMainMenu()">Back</button>
+</div>
+
+<div id="levelSelect" class="menu" style="display: none;">
+    <h1>Select Level</h1>
+    <div class="level-grid">
+        <button class="game-btn level-btn" onclick="startLevel(1)">Level 1</button>
+        <button class="game-btn level-btn" onclick="startLevel(2)">Level 2</button>
+        <button class="game-btn level-btn" onclick="startLevel(3)">Level 3</button>
+        <button class="game-btn level-btn" onclick="startLevel(4)">Level 4</button>
+        <button class="game-btn level-btn" onclick="startLevel(5)">Level 5</button>
+        <button class="game-btn level-btn" onclick="startLevel(6)">Level 6</button>
+        <button class="game-btn level-btn" onclick="startLevel(7)">Level 7</button>
+        <button class="game-btn level-btn" onclick="startLevel(8)">Level 8</button>
+        <button class="game-btn level-btn" onclick="startLevel(9)">Level 9</button>
+    </div>
+    <button class="game-btn back-btn" onclick="showMainMenu()">Back</button>
+</div>
+
+<div id="arcadeModeSelect" class="menu" style="display: none;">
+    <h1>Select Difficulty</h1>
+    <button class="game-btn level-btn" onclick="startArcadeMode('easy')">Easy</button><br>
+    <button class="game-btn mode-btn" onclick="startArcadeMode('medium')">Medium</button><br>
+    <button class="game-btn restart-btn" onclick="startArcadeMode('hard')">Hard</button><br>
+    <button class="game-btn back-btn" onclick="startArcadeMode('impossible')">Impossible</button><br>
+    <br>
+    <button class="game-btn back-btn" onclick="showMainMenu()">Back</button><br>
+</div>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<div id="gameOver">
+    Game Over!<br>
+    <button class="game-btn restart-btn" onclick="restartGame()">Play Again</button>
+    <button class="game-btn level-btn" onclick="showLevelSelect()">Change Level</button>
+    <button class="game-btn back-btn" onclick="showMainMenu()">Main Menu</button>
+</div>
+
+<div id="levelComplete">
+    Level Complete!<br>
+    <button class="game-btn restart-btn" onclick="nextLevel()">Next Level</button>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameOverDiv = document.getElementById('gameOver');
+const levelCompleteDiv = document.getElementById('levelComplete');
+const mainMenu = document.getElementById('mainMenu');
+const creditsMenu = document.getElementById('creditsMenu');
+const levelSelect = document.getElementById('levelSelect');
+const arcadeModeSelect = document.getElementById('arcadeModeSelect');
+
+let crowns = [];
+let unlockedLevels = [1]; // Start with only level 1 unlocked
+let collectedCrowns = 0;
+let nextCrownTimer = 0;
+let player = {
+    x: canvas.width / 2,
+    y: canvas.height - 50,
+    width: 50,
+    height: 30,
+    speed: 5,
+};
+
+let bullets = [];
+let enemies = [];
+let score = 0;
+let level = 1;
+let gameActive = false;
+let isArcadeMode = false;
+let survivalTime = 0;
+let startTime = 0;
+
+let safeZones = [];
+let playerInSafeZone = false;
+let lastTimeOutsideSafeZone = 0;
+
+let safeZoneEnterTime = 0;
+const SAFE_ZONE_ENTER_DELAY = 1000; // 1 second delay
+
+let canCollectCrowns = true;
+let safeZoneExitTime = 0;
+const SAFE_ZONE_COOLDOWN = 3000; // 3 seconds in milliseconds
+
+let arcadeDifficulty = 'medium'; // Default difficulty
+
+const arcadeConfigs = {
+    easy: {
+        enemyCount: 15,
+        enemySpeed: 2,
+        spawnRate: 0.03,
+        crownSpeed: 1.2
+    },
+    medium: {
+        enemyCount: 25,
+        enemySpeed: 3,
+        spawnRate: 0.05,
+        crownSpeed: 1.8
+    },
+    hard: {
+        enemyCount: 35,
+        enemySpeed: 4,
+        spawnRate: 0.07,
+        crownSpeed: 2.4
+    },
+    impossible: {
+        enemyCount: 45,
+        enemySpeed: 5,
+        spawnRate: 0.09,
+        crownSpeed: 3
+    }
+};
+
+const levelConfigs = {
+    normal: [
+        { enemyCount: 12, enemySpeed: 2, spawnRate: 0.03, crownSpeed: 1 },
+        { enemyCount: 15, enemySpeed: 2.5, spawnRate: 0.04, crownSpeed: 1.2 },
+        { enemyCount: 20, enemySpeed: 3, spawnRate: 0.05, crownSpeed: 1.4 },
+        { enemyCount: 25, enemySpeed: 3.5, spawnRate: 0.06, crownSpeed: 1.6 },
+        { enemyCount: 30, enemySpeed: 4, spawnRate: 0.07, crownSpeed: 1.8 },
+        { enemyCount: 35, enemySpeed: 4.2, spawnRate: 0.075, crownSpeed: 2.0 },
+        { enemyCount: 40, enemySpeed: 4.4, spawnRate: 0.08, crownSpeed: 2.2 },
+        { enemyCount: 45, enemySpeed: 4.6, spawnRate: 0.085, crownSpeed: 2.4 },
+        { enemyCount: 50, enemySpeed: 4.8, spawnRate: 0.09, crownSpeed: 2.6 },
+    ],
+    arcade: [
+        { enemyCount: 20, enemySpeed: 3, spawnRate: 0.05, crownSpeed: 1.5 },
+        { enemyCount: 25, enemySpeed: 3.5, spawnRate: 0.06, crownSpeed: 1.7 },
+        { enemyCount: 30, enemySpeed: 4, spawnRate: 0.07, crownSpeed: 1.9 },
+        { enemyCount: 35, enemySpeed: 4.5, spawnRate: 0.08, crownSpeed: 2.1 },
+        { enemyCount: 40, enemySpeed: 5, spawnRate: 0.09, crownSpeed: 2.3 },
+        { enemyCount: 45, enemySpeed: 5.2, spawnRate: 0.095, crownSpeed: 2.5 },
+        { enemyCount: 50, enemySpeed: 5.4, spawnRate: 0.1, crownSpeed: 2.7 },
+        { enemyCount: 55, enemySpeed: 5.6, spawnRate: 0.105, crownSpeed: 2.9 },
+        { enemyCount: 60, enemySpeed: 5.8, spawnRate: 0.11, crownSpeed: 3.1 },
+        { enemyCount: 65, enemySpeed: 6, spawnRate: 0.115, crownSpeed: 3.3 }
+    ]
+};
+
+let safezoneEnabled = false; // New variable to track safe zones state
+
+function createCrown() {
+    const config = getCurrentConfig();
+    crowns.push({
+        x: Math.random() * (canvas.width - 20) + 10,
+        y: -20,
+        speed: config.crownSpeed || 2,
+        width: 20,
+        height: 20
+    });
+}
+
+function drawCrown(crown) {
+    // Draw a simple crown shape
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    
+    // Base of crown
+    ctx.rect(crown.x, crown.y + 15, 20, 5);
+    
+    // Spikes of crown
+    ctx.moveTo(crown.x, crown.y + 15);
+    ctx.lineTo(crown.x + 5, crown.y);
+    ctx.lineTo(crown.x + 10, crown.y + 10);
+    ctx.lineTo(crown.x + 15, crown.y);
+    ctx.lineTo(crown.x + 20, crown.y + 15);
+    
+    ctx.fill();
+    
+    // Add shine effect
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(crown.x + 5, crown.y + 5);
+    ctx.lineTo(crown.x + 8, crown.y + 5);
+    ctx.stroke();
+}
+
+function moveCrowns() {
+    crowns.forEach(crown => {
+        crown.y += crown.speed;
+    });
+    
+    // Remove crowns that have moved off screen
+    crowns = crowns.filter(crown => crown.y < canvas.height + 20);
+}
+
+function checkCrownCollisions() {
+    if (!canCollectCrowns) return; // Skip collision check if can't collect crowns
+    
+    crowns.forEach((crown, index) => {
+        if (player.x < crown.x + crown.width &&
+            player.x + player.width > crown.x &&
+            player.y < crown.y + crown.height &&
+            player.y + player.height > crown.y) {
+            crowns.splice(index, 1);
+            collectedCrowns++;
+            
+            if (!isArcadeMode && collectedCrowns >= 5) {
+                levelComplete();
+            }
+        }
+    });
+}
+
+function showMainMenu() {
+    mainMenu.style.display = 'block';
+    creditsMenu.style.display = 'none';
+    levelSelect.style.display = 'none';
+    arcadeModeSelect.style.display = 'none';
+    gameOverDiv.style.display = 'none';
+    levelCompleteDiv.style.display = 'none';
+    canvas.style.display = 'none';
+    gameActive = false;
+}
+
+function showCredits() {
+    mainMenu.style.display = 'none';
+    creditsMenu.style.display = 'block';
+    levelSelect.style.display = 'none';
+    arcadeModeSelect.style.display = 'none';
+    canvas.style.display = 'none';
+}
+
+function showLevelSelect() {
+    mainMenu.style.display = 'none';
+    creditsMenu.style.display = 'none';
+    levelSelect.style.display = 'block';
+    arcadeModeSelect.style.display = 'none';
+    canvas.style.display = 'none';
+}
+
+function showArcadeMenu() {
+    mainMenu.style.display = 'none';
+    creditsMenu.style.display = 'none';
+    levelSelect.style.display = 'none';
+    arcadeModeSelect.style.display = 'block';
+    canvas.style.display = 'none';
+}
+
+function startLevel(selectedLevel) {
+    level = selectedLevel;
+    mainMenu.style.display = 'none';
+    levelSelect.style.display = 'none';
+    canvas.style.display = 'block';
+    isArcadeMode = false;
+    restartGame();
+}
+
+function startArcadeMode(difficulty) {
+    arcadeDifficulty = difficulty;
+    mainMenu.style.display = 'none';
+    arcadeModeSelect.style.display = 'none';
+    canvas.style.display = 'block';
+    isArcadeMode = true;
+    startTime = Date.now();
+    survivalTime = 0;
+    createSafeZones();
+    restartGame();
+}
+
+function getCurrentConfig() {
+    if (isArcadeMode) {
+        return arcadeConfigs[arcadeDifficulty];
+    }
+    return levelConfigs.normal[level - 1] || levelConfigs.normal[0]; // Fallback to first level config if level doesn't exist
+}
+
+function createSafeZones() {
+    if (arcadeDifficulty === 'impossible') {
+        safeZones = []; // No safe zones in impossible mode
+        return;
+    }
+    
+    const zoneSize = 80; // Smaller size
+    safeZones = [
+        {
+            x: 20,
+            y: 20,
+            width: zoneSize,
+            height: zoneSize
+        },
+        {
+            x: canvas.width - zoneSize - 20,
+            y: 20,
+            width: zoneSize,
+            height: zoneSize
+        },
+        {
+            x: 20,
+            y: canvas.height - zoneSize - 20,
+            width: zoneSize,
+            height: zoneSize
+        },
+        {
+            x: canvas.width - zoneSize - 20,
+            y: canvas.height - zoneSize - 20,
+            width: zoneSize,
+            height: zoneSize
+        }
+    ];
+}
+
+function drawSafeZones() {
+    ctx.strokeStyle = '#4CAF50';
+    ctx.lineWidth = 2;
+    
+    safeZones.forEach(zone => {
+        ctx.beginPath();
+        ctx.rect(zone.x, zone.y, zone.width, zone.height);
+        ctx.stroke();
+        
+        // Add dashed border effect
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#4CAF50';
+        ctx.strokeRect(zone.x, zone.y, zone.width, zone.height);
+        ctx.setLineDash([]); // Reset line dash
+        
+        // Add subtle glow effect
+        ctx.fillStyle = 'rgba(76, 175, 80, 0.1)';
+        ctx.fillRect(zone.x, zone.y, zone.width, zone.height);
+        
+        // Add "SAFE" text
+        ctx.fillStyle = '#4CAF50';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('SAFE', zone.x + zone.width/2, zone.y + zone.height/2);
+    });
+}
+
+function checkSafeZones() {
+    let currentlyInSafeZone = false;
+    
+    safeZones.forEach(zone => {
+        // Check if player is physically in a safe zone
+        if (player.x + player.width > zone.x && 
+            player.x < zone.x + zone.width &&
+            player.y + player.height > zone.y && 
+            player.y < zone.y + zone.height) {
+            currentlyInSafeZone = true;
+        }
+    });
+    
+    // If player just entered safe zone
+    if (currentlyInSafeZone && !playerInSafeZone) {
+        if (!safeZoneEnterTime) {
+            safeZoneEnterTime = Date.now();
+        }
+        
+        // Check if enough time has passed since entering
+        if (Date.now() - safeZoneEnterTime >= SAFE_ZONE_ENTER_DELAY) {
+            playerInSafeZone = true;
+            canCollectCrowns = false;
+            // Save the current survival time when entering safe zone
+            if (isArcadeMode && startTime) {
+                survivalTime = Math.floor((Date.now() - startTime) / 1000);
+            }
+        }
+    } else if (!currentlyInSafeZone) {
+        // Reset enter timer if player moves out before activation
+        safeZoneEnterTime = 0;
+        
+        // If player was in safe zone and just left
+        if (playerInSafeZone) {
+            playerInSafeZone = false;
+            safeZoneExitTime = Date.now();
+            // Update startTime to preserve accumulated time
+            if (isArcadeMode) {
+                startTime = Date.now() - (survivalTime * 1000);
+            }
+            canCollectCrowns = false;
+        }
+    }
+    
+    // Check if enough time has passed since leaving safe zone
+    if (!currentlyInSafeZone && !canCollectCrowns) {
+        if (Date.now() - safeZoneExitTime >= SAFE_ZONE_COOLDOWN) {
+            canCollectCrowns = true;
+        }
+    }
+    
+    // Return whether player is physically in a safe zone
+    return currentlyInSafeZone;
+}
+
+function gameLoop() {
+    if (!gameActive) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (isArcadeMode) {
+        // Only calculate survival time when outside safe zone and game is active
+        if (!playerInSafeZone && gameActive) {
+            survivalTime = Math.floor((Date.now() - startTime) / 1000);
+        }
+        
+        // Always maintain 3 crowns in arcade mode
+        while (crowns.length < 3) {
+            createCrown();
+        }
+        
+        // Draw arcade mode info
+        ctx.fillStyle = '#FFD700';
+        ctx.font = '24px Arial';
+        ctx.fillText(`Time: ${survivalTime}s`, canvas.width - 150, 30);
+        ctx.fillText(`Crowns: ${collectedCrowns}`, canvas.width - 150, 60);
+        
+        if (playerInSafeZone) {
+            ctx.fillStyle = '#4CAF50';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SAFE ZONE ACTIVE - Timer Paused', canvas.width/2, 30);
+        } else if (checkSafeZones() && !playerInSafeZone) {
+            // Show activation countdown only when physically in zone but not activated
+            const remainingTime = Math.ceil((SAFE_ZONE_ENTER_DELAY - (Date.now() - safeZoneEnterTime)) / 1000);
+            if (safeZoneEnterTime > 0) {
+                ctx.fillStyle = '#4CAF50';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Activating safe zone in: ${remainingTime}s`, canvas.width/2, 30);
+            }
+        }
+        
+        // Show cooldown timer when applicable
+        if (!playerInSafeZone && !canCollectCrowns && safeZoneExitTime > 0) {
+            const cooldownRemaining = Math.ceil((SAFE_ZONE_COOLDOWN - (Date.now() - safeZoneExitTime)) / 1000);
+            ctx.fillStyle = '#FF0000';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Crown collection available in: ${cooldownRemaining}s`, canvas.width/2, 60);
+        }
+    } else {
+        // Original crown spawn logic for story mode
+        const currentTime = Date.now();
+        if (currentTime - nextCrownTimer >= 5000 && crowns.length < 3) {
+            createCrown();
+            nextCrownTimer = currentTime;
+        }
+    }
+    
+    updatePlayer();
+    moveBullets();
+    moveEnemies();
+    moveCrowns();
+    checkCollisions();
+    checkCrownCollisions();
+    
+    const config = getCurrentConfig();
+    if (Math.random() < config.spawnRate) {
+        createEnemy();
+    }
+    
+    drawPlayer();
+    bullets.forEach(drawBullet);
+    enemies.forEach(drawEnemy);
+    crowns.forEach(drawCrown);
+    
+    // Draw safe zones
+    drawSafeZones();
+    
+    // Check if player is in safe zone
+    checkSafeZones();
+    
+    // Draw safe zone cooldown timer if applicable
+    if (!playerInSafeZone && !canCollectCrowns) {
+        const remainingTime = Math.ceil((SAFE_ZONE_COOLDOWN - (Date.now() - safeZoneExitTime)) / 1000);
+        ctx.fillStyle = '#FF0000';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Crown collection available in: ${remainingTime}s`, canvas.width/2, 60);
+    }
+    
+    requestAnimationFrame(gameLoop);
+}
+
+function restartGame() {
+    player.x = canvas.width / 2;
+    player.y = canvas.height - 50;
+    bullets = [];
+    enemies = [];
+    crowns = [];
+    collectedCrowns = isArcadeMode ? 0 : 0;  // Reset crowns counter
+    score = 0;
+    gameActive = true;
+    gameOverDiv.style.display = 'none';
+    levelCompleteDiv.style.display = 'none';
+    canvas.style.display = 'block';
+    nextCrownTimer = Date.now();
+    gameLoop();
+}
+
+function drawPlayer() {
+    // Ship body
+    ctx.fillStyle = '#4CAF50';
+    ctx.beginPath();
+    ctx.moveTo(player.x + player.width / 2, player.y);
+    ctx.lineTo(player.x + player.width, player.y + player.height);
+    ctx.lineTo(player.x + player.width * 0.8, player.y + player.height * 0.8);
+    ctx.lineTo(player.x + player.width * 0.2, player.y + player.height * 0.8);
+    ctx.lineTo(player.x, player.y + player.height);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cockpit
+    ctx.fillStyle = '#80CBC4';
+    ctx.beginPath();
+    ctx.moveTo(player.x + player.width * 0.4, player.y + player.height * 0.3);
+    ctx.lineTo(player.x + player.width * 0.6, player.y + player.height * 0.3);
+    ctx.lineTo(player.x + player.width * 0.55, player.y + player.height * 0.6);
+    ctx.lineTo(player.x + player.width * 0.45, player.y + player.height * 0.6);
+    ctx.closePath();
+    ctx.fill();
+
+    // Engines
+    ctx.fillStyle = '#FF5722';
+    ctx.beginPath();
+    ctx.rect(player.x + player.width * 0.2, player.y + player.height * 0.8, player.width * 0.2, player.height * 0.2);
+    ctx.rect(player.x + player.width * 0.6, player.y + player.height * 0.8, player.width * 0.2, player.height * 0.2);
+    ctx.fill();
+}
+
+function drawBullet(bullet) {
+    // Create a gradient for the bullet
+    let gradient = ctx.createRadialGradient(
+        bullet.x + 1.5, bullet.y + 5, 0,
+        bullet.x + 1.5, bullet.y + 5, 5
+    );
+    gradient.addColorStop(0, '#fff');
+    gradient.addColorStop(1, '#00ff00');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(bullet.x + 1.5, bullet.y + 5, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add a glow effect
+    ctx.shadowBlur = 5;
+    ctx.shadowColor = '#00ff00';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function drawEnemy(enemy) {
+    ctx.fillStyle = isArcadeMode ? `hsl(${enemy.hue}, 100%, 50%)` : '#ff0000';
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, 15, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function createEnemy() {
+    const config = getCurrentConfig();
+    if (enemies.length < config.enemyCount) {
+        const spawnSide = Math.random();
+        let enemy;
+        
+        if (spawnSide < 0.25) {
+            // Spawn from top
+            enemy = {
+                x: Math.random() * canvas.width,
+                y: -20,
+                speedX: (Math.random() - 0.5) * 4,
+                speedY: config.enemySpeed + Math.random() * 1,
+                hue: Math.random() * 360
+            };
+        } else if (spawnSide < 0.5) {
+            // Spawn from left
+            enemy = {
+                x: -20,
+                y: Math.random() * canvas.height,
+                speedX: config.enemySpeed + Math.random() * 1,
+                speedY: (Math.random() - 0.5) * 4,
+                hue: Math.random() * 360
+            };
+        } else if (spawnSide < 0.75) {
+            // Spawn from right
+            enemy = {
+                x: canvas.width + 20,
+                y: Math.random() * canvas.height,
+                speedX: -(config.enemySpeed + Math.random() * 1),
+                speedY: (Math.random() - 0.5) * 4,
+                hue: Math.random() * 360
+            };
+        } else {
+            // Spawn from bottom
+            enemy = {
+                x: Math.random() * canvas.width,
+                y: canvas.height + 20,
+                speedX: (Math.random() - 0.5) * 4,
+                speedY: -(config.enemySpeed + Math.random() * 1),
+                hue: Math.random() * 360
+            };
+        }
+        enemies.push(enemy);
+    }
+}
+
+function moveEnemies() {
+    enemies.forEach(enemy => {
+        enemy.x += enemy.speedX;
+        enemy.y += enemy.speedY;
+    });
+    
+    enemies = enemies.filter(enemy => 
+        enemy.y < canvas.height + 20 && 
+        enemy.x > -20 && 
+        enemy.x < canvas.width + 20
+    );
+}
+
+function moveBullets() {
+    bullets.forEach(bullet => {
+        bullet.y -= bullet.speed;
+    });
+    
+    bullets = bullets.filter(bullet => bullet.y > 0);
+}
+
+function checkCollisions() {
+    bullets.forEach((bullet, bulletIndex) => {
+        enemies.forEach((enemy, enemyIndex) => {
+            const dx = bullet.x - enemy.x;
+            const dy = bullet.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 15) {
+                bullets.splice(bulletIndex, 1);
+                enemies.splice(enemyIndex, 1);
+                score += 10;
+            }
+        });
+    });
+    
+    // Check if player is physically in any safe zone
+    let inAnySafeZone = checkSafeZones();
+    
+    // Only check enemy collisions if player is not physically in a safe zone
+    if (!inAnySafeZone) {
+        enemies.forEach(enemy => {
+            const dx = player.x + player.width / 2 - enemy.x;
+            const dy = player.y + player.height / 2 - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 30) {
+                gameOver();
+            }
+        });
+    }
+}
+
+function gameOver() {
+    gameActive = false;
+    gameOverDiv.style.display = 'block';
+    if (isArcadeMode) {
+        gameOverDiv.innerHTML = `
+            Game Over!<br>
+            Mode: ${arcadeDifficulty.charAt(0).toUpperCase() + arcadeDifficulty.slice(1)}<br>
+            Time Survived: ${survivalTime}s<br>
+            Crowns Collected: ${collectedCrowns}<br>
+            <button class="game-btn restart-btn" onclick="restartArcadeMode()">Try Again</button>
+            <button class="game-btn back-btn" onclick="showMainMenu()">Main Menu</button>
+        `;
+    } else {
+        gameOverDiv.innerHTML = `
+            Game Over!<br>
+            <button class="game-btn restart-btn" onclick="restartGame()">Play Again</button>
+            <button class="game-btn level-btn" onclick="showLevelSelect()">Change Level</button>
+            <button class="game-btn back-btn" onclick="showMainMenu()">Main Menu</button>
+        `;
+    }
+    canvas.style.display = 'block'; 
+}
+
+// Add new function to restart arcade mode with same difficulty
+function restartArcadeMode() {
+    startTime = Date.now();
+    survivalTime = 0;
+    playerInSafeZone = false;
+    canCollectCrowns = true;
+    safeZoneExitTime = 0;
+    createSafeZones();
+    restartGame();
+}
+
+function levelComplete() {
+    gameActive = false;
+    levelCompleteDiv.style.display = 'block';
+    levelCompleteDiv.innerHTML = `
+        Level Complete!<br>
+        <button class="game-btn restart-btn" onclick="returnToLevelSelect()">OK</button>
+    `;
+}
+
+function returnToLevelSelect() {
+    levelCompleteDiv.style.display = 'none';
+    showLevelSelect();
+}
+
+function nextLevel() {
+    level++;
+    levelCompleteDiv.style.display = 'none';
+    enemies = [];
+    bullets = [];
+    gameActive = true;
+    gameLoop();
+}
+
+let keys = {};
+
+document.addEventListener('keydown', (e) => {
+    keys[e.key] = true;
+});
+
+document.addEventListener('keyup', (e) => {
+    keys[e.key] = false;
+});
+
+document.addEventListener('keypress', (e) => {
+    if (e.key === ' ' && gameActive) {
+        bullets.push({
+            x: player.x + player.width / 2,
+            y: player.y,
+            speed: 7
+        });
+    }
+});
+
+function updatePlayer() {
+    // Move left with either A or Left Arrow
+    if ((keys['ArrowLeft'] || keys['a'] || keys['A']) && player.x > 0) {
+        player.x -= player.speed;
+    }
+    // Move right with either D or Right Arrow  
+    if ((keys['ArrowRight'] || keys['d'] || keys['D']) && player.x < canvas.width - player.width) {
+        player.x += player.speed;
+    }
+    // Move up with either W or Up Arrow
+    if ((keys['ArrowUp'] || keys['w'] || keys['W']) && player.y > 0) {
+        player.y -= player.speed;
+    }
+    // Move down with either S or Down Arrow
+    if ((keys['ArrowDown'] || keys['s'] || keys['S']) && player.y < canvas.height - player.height) {
+        player.y += player.speed;
+    }
+}
+
+showMainMenu();
+</script>
+</body></html>
